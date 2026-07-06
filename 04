@@ -1,0 +1,57 @@
+Implement the smallest safe shadow-mode context processing spike.
+
+Use the verified integration point:
+- wrap com.google.adk.model.LanguageModel
+- intercept generate(Prompt prompt)
+- still call delegate.generate(prompt) with the original, unmodified Prompt object
+
+Important constraints:
+- Do not touch SupportAgentController.
+- Do not touch SupportAgentService.
+- Do not change user-visible model behavior.
+- Do not implement active compression.
+- Do not add dashboard, database, MCP, retrieval, or external service.
+- Do not log raw prompt text, originalContext, serialized prompt content, user query, RAG content, tool output, or full extracted context.
+- Log safe metrics only.
+
+Create a new package inside support_agent:
+com.cme.sre.support.agent.compression
+
+Add:
+1. ContextProcessingLanguageModelWrapper
+   - implements LanguageModel
+   - delegates to original LanguageModel
+   - supports mode off/shadow
+   - active mode should throw NotImplementedException or be disabled
+
+2. PromptContextExtractor
+   - extracts text safely from Prompt messages/contents/TextPart only
+   - does not log extracted text
+   - if extraction fails, returns empty string and logs only a warning without sensitive content
+
+3. ContextProcessor interface
+
+4. PlaceholderContextProcessor
+   - calculates raw char count, processed char count, estimated tokens, saved tokens, savings percent
+   - must not log or return raw prompt text
+   - may simulate processing by counting only or trimming whitespace
+   - do not implement real compression yet
+
+5. ContextProcessingResult
+   - stores safe metric fields only
+
+Update AdkConfig.java:
+- wrap the existing GeminiLanguageModel bean with ContextProcessingLanguageModelWrapper
+- inject wrapper into Agent instead of raw GeminiLanguageModel
+
+Add property:
+agent.compression.mode=shadow
+
+Tests:
+- off mode delegates directly and does not call processor
+- shadow mode calls processor
+- shadow mode passes the exact same Prompt instance to delegate.generate(prompt)
+- active mode is disabled or throws NotImplementedException
+- no test expects raw prompt content to be logged
+
+After implementing, show exactly which files changed.
