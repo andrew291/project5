@@ -1,0 +1,43 @@
+Create a sanitized mini-reproducer of the LlmAgentFactory / custom LlmAgent flow.
+
+Goal:
+I need a small local skeleton project to develop and test a shadow-mode context metrics/compression hook without using the full company repository.
+
+Rules:
+- Do not include real company package names.
+- Use package `com.example.agent`.
+- Do not include secrets, URLs, configs, internal names, real logs, prompts, RAG data, tool names, or business logic.
+- Keep only the structural shape needed to test the hook.
+- Replace real classes with fake equivalents where possible.
+
+Include:
+1. A fake `LlmAgentFactory` that creates a `CustomLlmAgent`.
+2. A fake `CustomLlmAgent` that extends a minimal fake base agent.
+3. Methods matching the shape of the real custom agent:
+   - `runAsyncImpl(...)`
+   - `runLiveImpl(...)`
+4. A fake `InvocationContext` with only safe fields:
+   - requestId
+   - userMessage
+   - sessionId
+   - metadata map
+5. A compression package:
+   - ContextProcessingMode
+   - ContextProcessingResult
+   - ContextProcessor
+   - PlaceholderContextProcessor
+   - InvocationContextExtractor
+6. Shadow-mode behavior:
+   - extract countable text
+   - calculate safe metrics
+   - do not log raw text
+   - call original flow with original context unchanged
+7. Unit tests proving:
+   - off mode does not call processor
+   - shadow mode calls processor
+   - original context is unchanged
+   - active mode is disabled
+   - no raw prompt/context is logged
+
+Return the generated files as a small Maven project.
+Do not include any real company code or proprietary details.
