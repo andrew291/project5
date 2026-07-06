@@ -1,0 +1,73 @@
+Restart implementation
+
+Use the real integration point:
+- support_agent/src/main/java/.../agent/factory/impl/LimAgentFactory.java
+- com.cme.sre.agent.eventshack.LimAgentCustom
+
+Do not use LanguageModel wrapper.
+Do not create AdkConfig.java.
+Do not touch mcp_server.
+Do not touch adk_remote_agent_example.
+Do not touch SupportAgentController or SupportAgentService.
+
+Goal:
+Add shadow-mode context metrics only.
+
+Implementation:
+1. Create package inside support_agent only:
+   com.cme.sre.agent.compression
+
+2. Add small safe classes:
+   - ContextProcessingResult
+   - ContextProcessor
+   - PlaceholderContextProcessor
+   - InvocationContextExtractor
+
+3. PlaceholderContextProcessor:
+   - no real compression yet
+   - no raw context logging
+   - calculate only safe metrics:
+     raw chars, processed chars, estimated tokens, saved tokens, savings percent, notes
+   - use simple approximate token count or existing tokenizer only if dependency is already safe/approved
+   - if adding tokenizer dependency is risky, use chars / 4 for now
+
+4. InvocationContextExtractor:
+   - extract only safe text/countable content from InvocationContext
+   - do not log extracted text
+   - if extraction fails, return empty string and log only a generic warning
+
+5. Modify LimAgentFactory:
+   - inject InvocationContextExtractor and ContextProcessor
+   - pass them into LimAgentCustom constructor
+
+6. Modify LimAgentCustom:
+   - add fields for InvocationContextExtractor, ContextProcessor, and compression mode
+   - in runAsyncImpl and runLiveImpl, before calling super.run...Impl(invocationContext):
+       a. if mode=off, do nothing
+       b. if mode=shadow, extract countable context from InvocationContext
+       c. process it
+       d. log only safe metrics
+       e. call super with original unmodified InvocationContext
+       f. do not alter model input/output
+       g. active mode should throw UnsupportedOperationException or behave as off
+
+7. Add property:
+   agent.compression.mode=shadow
+
+8. Tests:
+   - off mode does not call processor
+   - shadow mode calls processor
+   - shadow mode calls super/original flow with same InvocationContext
+   - no raw context is logged
+   - active mode disabled
+
+Important:
+Do not log raw prompt/context/user query/tool output/RAG content.
+Do not implement active compression.
+Do not add dashboard/database.
+Do not claim exact final prompt token savings. These are approximate shadow-mode context metrics.
+
+After implementation, show exactly:
+- files changed
+- why each file changed
+- how to run the targeted tests
