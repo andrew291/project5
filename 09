@@ -1,0 +1,140 @@
+Create a sanitized skeleton project in a separate directory.
+
+Do not modify the real application modules.
+
+Create the skeleton here, at repo root:
+
+`agent-compression-skeleton/`
+
+Goal:
+I need a small Maven project that reproduces only the structural shape of our `LlmAgentFactory` / custom `LlmAgent` flow so I can develop and test a shadow-mode context metrics/compression hook separately.
+
+Important rules:
+
+* Do not include real company package names.
+* Use fake package: `com.example.agent`
+* Do not include secrets, URLs, configs, internal names, real prompts, real logs, real RAG data, real tool names, or business logic.
+* Do not copy proprietary implementation logic.
+* Keep only the minimum structure needed to test the hook pattern.
+* Do not modify `support_agent`, `mcp_server`, `etl_service`, or any existing module.
+* Do not add this skeleton as a Maven module to the parent pom.
+* This should be a standalone Maven project under `agent-compression-skeleton/`.
+
+Required folder structure:
+
+```text
+agent-compression-skeleton/
+├── pom.xml
+├── README.md
+├── src/main/java/com/example/agent/
+│   ├── factory/
+│   │   └── LlmAgentFactory.java
+│   ├── custom/
+│   │   ├── BaseLlmAgent.java
+│   │   └── CustomLlmAgent.java
+│   ├── model/
+│   │   ├── FakeInvocationContext.java
+│   │   └── FakeEvent.java
+│   └── compression/
+│       ├── ContextProcessingMode.java
+│       ├── ContextProcessingResult.java
+│       ├── ContextProcessor.java
+│       ├── PlaceholderContextProcessor.java
+│       └── InvocationContextExtractor.java
+└── src/test/java/com/example/agent/
+    └── compression/
+        └── CustomLlmAgentShadowModeTest.java
+```
+
+Functional requirements:
+
+1. `BaseLlmAgent`
+
+   * fake minimal base agent
+   * has methods shaped like:
+
+     * `runAsyncImpl(FakeInvocationContext context)`
+     * `runLiveImpl(FakeInvocationContext context)`
+   * returns fake events/results
+   * does not contain real ADK code
+
+2. `CustomLlmAgent`
+
+   * extends `BaseLlmAgent`
+   * overrides `runAsyncImpl(...)` and `runLiveImpl(...)`
+   * supports modes:
+
+     * `OFF`
+     * `SHADOW`
+     * `ACTIVE`
+   * in `OFF`, directly calls `super`
+   * in `SHADOW`, extracts countable context, processes metrics, logs safe metrics only, then calls `super` with the original unchanged context
+   * in `ACTIVE`, throw `UnsupportedOperationException` or behave as disabled for now
+   * must not change model behavior
+
+3. `LlmAgentFactory`
+
+   * creates and returns `CustomLlmAgent`
+   * mimics the shape of our real factory, but with fake names and fake dependencies only
+
+4. `FakeInvocationContext`
+
+   * safe fake fields only:
+
+     * requestId
+     * sessionId
+     * userMessage
+     * metadata map
+   * no real data
+
+5. `InvocationContextExtractor`
+
+   * extracts countable text from `FakeInvocationContext`
+   * does not log extracted text
+   * if extraction fails, returns empty string and logs only generic warning
+
+6. `PlaceholderContextProcessor`
+
+   * no real compression yet
+   * calculates:
+
+     * raw character count
+     * processed character count
+     * estimated raw tokens
+     * estimated processed tokens
+     * estimated saved tokens
+     * savings percentage
+     * latency if appropriate
+   * use simple estimate: `chars / 4`
+   * must not log raw context text
+
+7. `ContextProcessingResult`
+
+   * contains safe metric fields only
+   * no raw prompt/context field
+
+8. Tests
+   Add JUnit tests proving:
+
+   * `OFF` mode does not call processor
+   * `SHADOW` mode calls extractor and processor
+   * `SHADOW` mode still calls original base flow
+   * original `FakeInvocationContext` object is unchanged
+   * `ACTIVE` mode is disabled or throws `UnsupportedOperationException`
+   * no test expects raw prompt/context content to be logged
+
+9. README
+   Explain:
+
+   * this is a sanitized skeleton only
+   * it is not company code
+   * it does not contain real ADK/Gemini integration
+   * it demonstrates the shadow-mode pattern
+   * future real integration should apply this pattern to the real custom `LlmAgent` flow
+
+After creating the skeleton, show:
+
+1. Files created.
+2. How to run tests.
+3. A short explanation of the flow.
+4. Confirmation that no existing project modules were modified.
