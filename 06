@@ -1,0 +1,20 @@
+Do not code yet.
+
+We found the likely real integration point:
+- support_agent/.../agent/factory/impl/LlmAgentFactory.java
+- com.cme.sre.agent.eventshack.LimAgentCustom
+
+Please inspect only the real implementation of LlmAgentFactory and LimAgentCustom.
+
+Answer:
+1. What method in LimAgentCustom can be overridden or extended to intercept the final prompt or request before the model call?
+2. Does LimAgentCustom see the final assembled LLM prompt, or only higher-level agent input?
+3. Does it have access to tool/RAG outputs and chat history?
+4. What exact method should be modified for shadow-mode metrics?
+5. Can we add shadow-mode metrics without changing the model input/output?
+6. Where should the compression package live?
+7. What is the smallest safe implementation plan?
+
+Do not modify files.
+Do not create files.
+Do not invent config classes.
